@@ -1,7 +1,10 @@
 [user]
 	email = 44695374+thekpaul@users.noreply.github.com
 	name = Paul Kim
+	signingkey = 179139D9423FB3B9!
 [init]
 	defaultBranch = main
 [core]
 	editor = nvim
+[commit]
+	gpgsign = true
