@@ -8,3 +8,14 @@
 	editor = nvim
 [commit]
 	gpgsign = true
+	verbose = true
+[pull]
+	rebase = true
+[merge]
+	autostash = true
+[rebase]
+	autostash = true
+[push]
+	default = simple
+[help]
+	autocorrect = 10
