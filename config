@@ -19,3 +19,5 @@
 	default = simple
 [help]
 	autocorrect = 10
+[alias]
+	fix-commit = "!sh -c 'git commit --edit --file=\"$(git rev-parse --git-path COMMIT_EDITMSG)\" \"$@\"' _"
