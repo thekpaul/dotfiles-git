@@ -3,3 +3,5 @@
 	name = Paul Kim
 [init]
 	defaultBranch = main
+[core]
+	editor = nvim
