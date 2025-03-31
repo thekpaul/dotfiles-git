@@ -1,3 +1,5 @@
 [user]
 	email = 44695374+thekpaul@users.noreply.github.com
 	name = Paul Kim
+[init]
+	defaultBranch = main
