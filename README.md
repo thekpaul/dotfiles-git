@@ -51,6 +51,23 @@ git clone https://github.com/thekpaul/dotfiles-git.git $XDG_CONFIG_HOME/git
 
 Make sure to use the _full path_ for `<SUPERPROJECT_INSTALLATION_PATH>`.
 
+### **(Windows only)**: Additional Global Configurations for Windows Systems
+
+(Sym)linking `windows.config` to `$env:USERPROFILE` as `.gitconfig` provides
+an additional "global" Git configuration file applicable only to Windows
+systems.
+```pwsh
+New-Item -Path $env:USERPROFILE\.gitconfig -ItemType HardLink -Value $env:XDG_CONFIG_HOME\git\windows.config
+```
+If your `$env:XDG_CONFIG_HOME\git\` is already a (sym)link, you can directly
+(sym)link to the file located in the original superproject installation
+path:
+```pwsh
+New-Item -Path $env:USERPROFILE\.gitconfig -ItemType HardLink -Value <SUPERPROJECT_INSTALLATION_PATH>\git\windows.config
+```
+`ItemType` may be changed to `SymbolicLink` to create "shortcut"s
+("symbolic" links) here as well.
+
 ## Superproject Integration
 
 Any superproject may import this repository in either of two ways —
