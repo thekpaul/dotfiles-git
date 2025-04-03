@@ -22,3 +22,6 @@
 [alias]
 	fix-commit = "!sh -c 'git commit --edit --file=\"$(git rev-parse --git-path COMMIT_EDITMSG)\" \"$@\"' _"
 	rst-commit = commit --reedit-message=HEAD --reset-author
+[pretty]
+	simple = %C(auto)%h%d%Creset %s%n  %C(cyan)>> Committed on %cd by %cn <%ce> <<%Creset%n  %C(yellow)>> Signature: %G? (key %GK) <<%Creset
+	expand = %C(auto)%h%d%Creset %s%n  %C(cyan)>> Committed on %cd by %cn <%ce> <<%Creset%n  %C(magenta)>> Authored  on %ad by %an <%ae> <<%Creset%n  %C(yellow)>> Signature: %G? (key %GK, signer %GS) <<%Creset
