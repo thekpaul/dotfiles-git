@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]    # direct commits landing on main
+  pull_request:
+    branches: [main]    # PRs targeting main — checked pre-merge
+  workflow_dispatch:    # manual run button
+
+jobs:
+  checks:
+    name: Checks (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # report every git version, not just the first to fail
+      matrix:
+        include:
+          - { name: git-2.28, env: git228, spec: "git=2.28.0" }
+          - { name: git-latest, env: gitlatest, spec: "git" }
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | sh
+      - name: Install Git (${{ matrix.name }}, conda-forge)
+        run: |
+          echo "$HOME/.pixi/bin" >> "$GITHUB_PATH"
+          "$HOME/.pixi/bin/pixi" global install \
+            --environment "${{ matrix.env }}" \
+            --expose "${{ matrix.env }}=git" \
+            "${{ matrix.spec }}"
+      - name: Report Git version
+        run: ${{ matrix.env }} --version
+      - name: Run checks
+        env:
+          GIT_BIN: ${{ matrix.env }}
+        run: bash tests/run-checks.sh
+
+  containers:
+    name: Checks (${{ matrix.name }})
+    runs-on: ubuntu-latest     # el8/el7 run as containers here — no extra cost
+    strategy:
+      fail-fast: false         # report every leg, not just the first to fail
+      matrix:
+        # Runs Pixi-provisioned Git rather than the container's system git:
+        # el7 ships git 1.8.3, far below what these checks need, and
+        # el8's system git is likewise older than the declared floor —
+        # Pixi keeps the tested binary identical to the matrix job above.
+        include:
+          - { name: el8-git-latest, image: "redhat/ubi8",             env: gitlatest, spec: "git" }
+          - { name: el7-git-latest, image: "quay.io/centos/centos:7", env: gitlatest, spec: "git" }
+    steps:
+      - uses: actions/checkout@v7   # on host; node24 needs glibc absent from CentOS 7
+      - name: Fetch pixi on the host
+        # el7's curl cannot reach pixi.sh (TLS too old — curl error 35);
+        # fetch the static musl binary here and mount it in.
+        # Package downloads then use pixi's bundled rustls,
+        # independent of the container's own TLS stack.
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/pixi" \
+            https://github.com/prefix-dev/pixi/releases/latest/download/pixi-x86_64-unknown-linux-musl
+          chmod +x "$RUNNER_TEMP/pixi"
+      - name: Run checks in ${{ matrix.name }} container
+        run: |
+          docker run --rm -v "$PWD":/repo -w /repo \
+            -v "$RUNNER_TEMP/pixi:/usr/local/bin/pixi:ro" "${{ matrix.image }}" bash -c '
+            set -e
+            pixi global install --environment "${{ matrix.env }}" \
+              --expose "${{ matrix.env }}=git" "${{ matrix.spec }}"
+            export PATH="$HOME/.pixi/bin:$PATH"
+            "${{ matrix.env }}" --version
+            GIT_BIN="${{ matrix.env }}" bash tests/run-checks.sh'
