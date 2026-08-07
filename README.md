@@ -22,6 +22,8 @@ your superproject installation is cloned.
 ```sh
 git clone https://github.com/thekpaul/dotfiles-git.git $XDG_CONFIG_HOME/git
 ```
+No `--recursive` flag or submodule init is required — this repository has
+no submodule dependencies.
 
 ### (Sym)link from Local Superproject Installation (Not recommended)
 
@@ -97,6 +99,81 @@ import later updates with:
 ```sh
 git subtree pull --prefix=git https://github.com/thekpaul/dotfiles-git.git main --squash
 ```
+
+## Structure
+
+- `config`: the "global" Git configuration, loaded on every platform
+  via `$XDG_CONFIG_HOME/git/config` — identity, sane defaults
+  (`rebase`/`merge` autostash, `pull.rebase`, `push.default`), commit signing,
+  the custom `simple`/`expand` pretty formats, and
+  the `fix-commit`/`rst-commit` aliases.
+- `windows.config`: a second, Windows-only "global" configuration file,
+  layered in only when (sym)linked to `%USERPROFILE%\.gitconfig`
+  (see the Windows-only installation step above) — it does not apply on
+  any other platform and is never read by `config` itself.
+  It points `gpg.program` at `bin/gpg.cmd` (below) and
+  enables `core.longpaths`, both needed only on Windows.
+- [`bin/gpg.cmd`](./bin/gpg.cmd):
+  the batch wrapper `windows.config` points `gpg.program` at.
+  Gpg4win's 32-bit and 64-bit installers place `gpg.exe` at different paths, so
+  it tries both known native GnuPG install locations in turn and fails loudly,
+  with a stderr message, if neither is found — rather than pinning
+  a single path that would silently break on the other installer variant.
+- [`tests/`](./tests/run-checks.sh): the isolated check suite;
+  see Testing below.
+
+## Version Expectations
+
+Development floor is Git **2.28.0**, the oldest conda-forge build
+carrying `init.defaultBranch` — `config` sets `init.defaultBranch = main`,
+which is silently ignored on older Git and leaves new repositories on
+the historical `master` default instead of failing.
+CI (see below) exercises the declared floor and latest release.
+
+## External Tool Assumptions
+
+None of the following are required for `config`/`windows.config` to *load*;
+each is exercised only by a specific alias or setting:
+
+- `sh` — the `fix-commit` alias shells out to `sh -c '...'` for
+  command substitution; must be a POSIX-conformant shell on `$PATH`.
+  Present as the system shell on Unix-based platforms;
+  Git for Windows bundles one.
+- `nvim` — configured as `core.editor`; `$GIT_EDITOR`, if set,
+  overrides this regardless of whether `nvim` is present.
+  Absent that override, a missing `nvim` makes Git error
+  rather than silently falling back to `$EDITOR` or a system default.
+- `gpg` — `commit.gpgsign = true` and a `user.signingkey` are set in `config`;
+  a matching secret key must be available to `gpg` (or, on Windows
+  with `windows.config` layered in, to the `gpg.program` path it points at) for
+  commits to succeed unless overridden per-repository.
+
+## Testing
+
+Run the check suite locally:
+```sh
+bash tests/run-checks.sh
+```
+This exercises both files parsing as valid Git config,
+the `simple`/`expand` pretty formats rendering correctly
+(including both identity lines in `expand`),
+the `rst-commit` and `fix-commit` aliases end-to-end —
+the latter in both a normal repository and a linked worktree,
+covering the worktree-specific bug it was written to fix — and
+`windows.config`'s option values, against a throwaway `HOME`/`XDG_CONFIG_HOME`
+tree with this repository symlinked in as the isolated global Git config.
+No real user configuration or repository state is touched.
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the check suite on
+push and pull request against `main`, across a Pixi-provisioned Git 2.28.0
+(floor) and latest matrix on Ubuntu, plus
+container legs proving the same Pixi-provisioned latest Git under
+the el8 and el7 userlands this configuration actually targets —
+both legs install Git through Pixi rather than the container's own package,
+since el7 ships an unusable git 1.8.3 and el8's system git likewise
+predates the declared floor.
 
 ## Meta
 
