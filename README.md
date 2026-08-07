@@ -5,23 +5,35 @@ This repository tracks configurations for the Git version control system.
 
 ## Installation Methods
 
-Install this repository at `$XDG_CONFIG_HOME/git`:
+Install this repository at `$XDG_CONFIG_HOME/git`;
+if environment variable `XDG_CONFIG_HOME` is not set on your system,
+use default fallback `$HOME/.config`:
 
 ### Git Worktree (Recommended)
 
 Create a new Git worktree from the submodule copy inside your
 local superproject installation to the destination path:
-```sh
-git worktree add $XDG_CONFIG_HOME/git -b main --track <remote_name>/main
-```
+- Unix-based systems:
+  ```sh
+  git worktree add ${XDG_CONFIG_HOME:-~/.config}/git -b main --track <remote_name>/main
+  ```
+- Windows systems with PowerShell:
+  ```pwsh
+  git worktree add "$($env:XDG_CONFIG_HOME ?? "$HOME\.config")\git" -b main --track <remote_name>/main
+  ```
 where `remote_name` is the name of the "remote" repository from which
 your superproject installation is cloned.
 
 ### Standalone Installation from Remote
 
-```sh
-git clone https://github.com/thekpaul/dotfiles-git.git $XDG_CONFIG_HOME/git
-```
+- Unix-based systems:
+  ```sh
+  git clone https://github.com/thekpaul/dotfiles-git.git ${XDG_CONFIG_HOME:-~/.config}/git
+  ```
+- Windows systems with PowerShell:
+  ```pwsh
+  git clone https://github.com/thekpaul/dotfiles-git.git "$($env:XDG_CONFIG_HOME ?? "$HOME\.config")\git"
+  ```
 No `--recursive` flag or submodule init is required — this repository has
 no submodule dependencies.
 
@@ -37,7 +49,7 @@ no submodule dependencies.
 
 - Unix-based systems where `ln` is available:
   ```sh
-  ln -s <SUPERPROJECT_INSTALLATION_PATH>/git $XDG_CONFIG_HOME/git
+  ln -s <SUPERPROJECT_INSTALLATION_PATH>/git ${XDG_CONFIG_HOME:-~/.config}/git
   ```
   Using the `-s` flag creates a "symbolic" ("soft") link, which is
   most likely to be the only type of link possible to create for directories
@@ -46,7 +58,7 @@ no submodule dependencies.
   possible for **individual files**.
 - Windows systems with PowerShell, using the `New-Item` cmdlet:
   ```pwsh
-  New-Item -Path $env:XDG_CONFIG_HOME\git -ItemType Junction -Value <SUPERPROJECT_INSTALLATION_PATH>\git
+  New-Item -Path "$($env:XDG_CONFIG_HOME ?? "$HOME\.config")\git" -ItemType Junction -Value <SUPERPROJECT_INSTALLATION_PATH>\git
   ```
   `ItemType` may be changed to `HardLink` for **individual files** or
   `SymbolicLink` to create "shortcut"s ("symbolic" links).
@@ -59,7 +71,7 @@ Make sure to use the _full path_ for `<SUPERPROJECT_INSTALLATION_PATH>`.
 an additional "global" Git configuration file applicable only to Windows
 systems.
 ```pwsh
-New-Item -Path $env:USERPROFILE\.gitconfig -ItemType HardLink -Value $env:XDG_CONFIG_HOME\git\windows.config
+New-Item -Path $env:USERPROFILE\.gitconfig -ItemType HardLink -Value "$($env:XDG_CONFIG_HOME ?? "$HOME\.config")\git\windows.config"
 ```
 If your `$env:XDG_CONFIG_HOME\git\` is already a (sym)link, you can directly
 (sym)link to the file located in the original superproject installation
